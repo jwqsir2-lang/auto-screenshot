@@ -1,0 +1,46 @@
+name: Build APK
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: 8.2
+
+      - name: Build debug APK
+        run: gradle assembleDebug --no-daemon --console=plain
+
+      - name: Verify declared permissions and components
+        run: |
+          AAPT2=$(ls "$ANDROID_HOME"/build-tools/*/aapt2 | tail -1)
+          echo "== permissions =="
+          "$AAPT2" dump permissions app/build/outputs/apk/debug/app-debug.apk
+          for p in android.permission.FOREGROUND_SERVICE \
+                   android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION \
+                   android.permission.POST_NOTIFICATIONS \
+                   android.permission.RECEIVE_BOOT_COMPLETED; do
+            "$AAPT2" dump permissions app/build/outputs/apk/debug/app-debug.apk \
+              | grep -q "$p" || { echo "MISSING PERMISSION: $p"; exit 1; }
+          done
+          echo "== services/receivers =="
+          "$AAPT2" dump xmltree app/build/outputs/apk/debug/app-debug.apk AndroidManifest.xml \
+            | grep -E "ScreenshotService|BootReceiver|MyDeviceAdminReceiver|foregroundServiceType"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: autoscreenshot-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">自动截图</string>
+    <string name="device_admin_description">激活后本应用无法被卸载，保障后台定时截图持续运行</string>
+    <string name="notif_running">后台运行中，每 %1$d 分钟自动保存一张截图</string>
+</resources>
