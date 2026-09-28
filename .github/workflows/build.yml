@@ -25,18 +25,19 @@ jobs:
 
       - name: Verify declared permissions and components
         run: |
+          APK="app/build/outputs/apk/debug/app-debug.apk"
           AAPT2=$(ls "$ANDROID_HOME"/build-tools/*/aapt2 | tail -1)
           echo "== permissions =="
-          "$AAPT2" dump permissions app/build/outputs/apk/debug/app-debug.apk
+          "$AAPT2" dump permissions "$APK"
           for p in android.permission.FOREGROUND_SERVICE \
                    android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION \
                    android.permission.POST_NOTIFICATIONS \
                    android.permission.RECEIVE_BOOT_COMPLETED; do
-            "$AAPT2" dump permissions app/build/outputs/apk/debug/app-debug.apk \
+            "$AAPT2" dump permissions "$APK" \
               | grep -q "$p" || { echo "MISSING PERMISSION: $p"; exit 1; }
           done
           echo "== services/receivers =="
-          "$AAPT2" dump xmltree app/build/outputs/apk/debug/app-debug.apk AndroidManifest.xml \
+          "$AAPT2" dump xmltree --file "$APK" AndroidManifest.xml \
             | grep -E "ScreenshotService|BootReceiver|MyDeviceAdminReceiver|foregroundServiceType"
 
       - uses: actions/upload-artifact@v7
