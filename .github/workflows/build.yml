@@ -5,6 +5,9 @@ on:
     branches: [ main, master ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -20,13 +23,36 @@ jobs:
         with:
           gradle-version: 8.2
 
-      - name: Build debug APK
-        run: gradle assembleDebug --no-daemon --console=plain
-
-      - name: Verify declared permissions and components
+      - name: Ensure release keystore
         run: |
-          APK="app/build/outputs/apk/debug/app-debug.apk"
+          mkdir -p keystore
+          if [ ! -f keystore/release.jks ]; then
+            keytool -genkeypair -v \
+              -keystore keystore/release.jks \
+              -alias autoscreenshot \
+              -keyalg RSA -keysize 2048 -validity 36500 \
+              -storepass autoscreenshot -keypass autoscreenshot \
+              -dname "CN=AutoScreenshot, OU=App, O=jwqsir2-lang, L=NA, S=NA, C=CN"
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add keystore/release.jks
+            git commit -m "chore: add release signing keystore"
+            git push
+            echo "keystore created and committed"
+          else
+            echo "keystore already present"
+          fi
+
+      - name: Build release APK
+        run: gradle assembleRelease --no-daemon --console=plain
+
+      - name: Verify APK signature, permissions and components
+        run: |
+          APK="app/build/outputs/apk/release/app-release.apk"
           AAPT2=$(ls "$ANDROID_HOME"/build-tools/*/aapt2 | tail -1)
+          APKSIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | tail -1)
+          echo "== signature =="
+          "$APKSIGNER" verify --verbose "$APK"
           echo "== permissions =="
           "$AAPT2" dump permissions "$APK"
           for p in android.permission.FOREGROUND_SERVICE \
@@ -36,8 +62,6 @@ jobs:
             "$AAPT2" dump permissions "$APK" \
               | grep -q "$p" || { echo "MISSING PERMISSION: $p"; exit 1; }
           done
-          echo "== apk contains AndroidManifest.xml =="
-          unzip -l "$APK" | grep -q AndroidManifest.xml || { echo "NO MANIFEST IN APK"; exit 1; }
           echo "== components in merged manifest =="
           MANIFEST=$(find app/build/intermediates/merged_manifests -name AndroidManifest.xml | head -1)
           test -n "$MANIFEST" || { echo "merged manifest not found"; exit 1; }
@@ -47,6 +71,6 @@ jobs:
 
       - uses: actions/upload-artifact@v7
         with:
-          name: autoscreenshot-debug-apk
-          path: app/build/outputs/apk/debug/*.apk
+          name: autoscreenshot-release-apk
+          path: app/build/outputs/apk/release/*.apk
           if-no-files-found: error

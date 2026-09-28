@@ -10,13 +10,29 @@ android {
         applicationId "com.jwqsir.autoscreenshot"
         minSdk 26
         targetSdk 34
-        versionCode 1
-        versionName "1.0"
+        versionCode 2
+        versionName "1.1"
+    }
+
+    signingConfigs {
+        release {
+            // 个人自签名密钥，随仓库公开；只用于本应用防杀软误报，无安全敏感性
+            def ksFile = rootProject.file("keystore/release.jks")
+            if (ksFile.exists()) {
+                storeFile ksFile
+                storePassword "autoscreenshot"
+                keyAlias "autoscreenshot"
+                keyPassword "autoscreenshot"
+                v1SigningEnabled true
+                v2SigningEnabled true
+            }
+        }
     }
 
     buildTypes {
         release {
             minifyEnabled false
+            signingConfig signingConfigs.release
         }
     }
 

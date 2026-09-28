@@ -28,4 +28,4 @@ Android 应用：**后台常驻，每隔 1~15 分钟自动截取屏幕一张，�
 git push origin main
 ```
 
-推送后 Actions 自动编译，在 Actions 页面对应 run 的 Artifacts 里下载 `autoscreenshot-debug-apk`（debug 签名，安装时允许"未知来源"即可）。
+推送后 Actions 自动编译，在 Actions 页面对应 run 的 Artifacts 里下载 `autoscreenshot-release-apk`（**已用正式 keystore 签名的 release 包**，debug 签名会被杀毒软件误报）。
