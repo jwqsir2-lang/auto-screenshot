@@ -36,9 +36,14 @@ jobs:
             "$AAPT2" dump permissions "$APK" \
               | grep -q "$p" || { echo "MISSING PERMISSION: $p"; exit 1; }
           done
-          echo "== services/receivers =="
-          "$AAPT2" dump xmltree --file "$APK" AndroidManifest.xml \
-            | grep -E "ScreenshotService|BootReceiver|MyDeviceAdminReceiver|foregroundServiceType"
+          echo "== apk contains AndroidManifest.xml =="
+          unzip -l "$APK" | grep -q AndroidManifest.xml || { echo "NO MANIFEST IN APK"; exit 1; }
+          echo "== components in merged manifest =="
+          MANIFEST=$(find app/build/intermediates/merged_manifests -name AndroidManifest.xml | head -1)
+          test -n "$MANIFEST" || { echo "merged manifest not found"; exit 1; }
+          grep -E "ScreenshotService|BootReceiver|MyDeviceAdminReceiver" "$MANIFEST"
+          grep -q 'foregroundServiceType="mediaProjection"' "$MANIFEST" \
+            || { echo "MISSING foregroundServiceType"; exit 1; }
 
       - uses: actions/upload-artifact@v7
         with:
